@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Mapa de Valladolid</title>
+    <link rel="stylesheet" href="styles.css">
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+</head>
+<body>
+    <header>
+        <nav>
+            <ul>
+                <li><a href="#">Inicio</a></li>
+                <li><a href="#">Mapa</a></li>
+                <li><a href="#">Calles</a></li>
+                <li><a href="#">Contacto</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section class="titulos">
+            <h2>Título 1</h2>
+            <h2>Título 2</h2>
+            <h2>Título 3</h2>
+            <h2>Título 4</h2>
+            <h2>Título 5</h2>
+        </section>
+
+        <section class="buscador">
+            <input type="text" id="inputCalle" placeholder="Buscar calle...">
+            <button onclick="buscarCalle()">Buscar</button>
+            <div id="resultado"></div>
+        </section>
+
+        <section class="mapa">
+            <div id="map"></div>
+        </section>
+    </main>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

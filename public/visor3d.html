@@ -3,21 +3,27 @@
 <head>
   <meta charset="UTF-8">
   <title>Visor 3D - Gemelo Digital</title>
-  <style>
-    body { margin: 0; overflow: hidden; }
-    #info {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      background: rgba(255, 255, 255, 0.8);
-      padding: 10px;
-      border-radius: 5px;
-      font-family: Arial, sans-serif;
-    }
-  </style>
+  <link rel="stylesheet" href="/src/visor3d.css">
 </head>
 <body>
-  <div id="info">Haz clic en un edificio para ver información</div>
+  <div id="info">Haz clic en un edificio o parque para ver información</div>
+  <a href="index.html" id="back-button">⟵ Volver al Inicio</a>
+
+  <!-- Panel Lateral Oculto -->
+  <div id="panel" style="display: none;">
+    <h2 id="panel-title"></h2>
+    <p id="panel-type"></p>
+    <p id="panel-pollution"></p>
+    <button id="modify-btn">Modificar terreno</button>
+    <div id="modification-options" style="display: none; margin-top: 10px;">
+      <button data-type="Parque">🌳 Parque</button>
+      <button data-type="Edificio">🏢 Edificio</button>
+      <button data-type="Fábrica">🏭 Fábrica</button>
+      <button data-type="Centro Comercial">🛒 Centro Comercial</button>
+    </div>
+  </div>
+
   <script type="module" src="/src/visor3d.js"></script>
 </body>
+
 </html>

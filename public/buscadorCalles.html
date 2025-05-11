@@ -2,38 +2,22 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Mapa de Valladolid</title>
+    <title>Buscador de Calles - Urbia</title>
     <link rel="stylesheet" href="/src/buscadorCalles.css">
-
-    <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
 </head>
 <body>
-    <header>
-        <nav>
-            <ul>
-                <li><a href="/index.html">Inicio</a></li>
-                <li><a href="#">Mapa</a></li>
-                <li><a href="#">Calles</a></li>
-                <li><a href="#">Contacto</a></li>
-            </ul>
-        </nav>
-    </header>
+    <a href="index.html" id="back-button">⟵ Volver al Inicio</a>
 
-    <main>
-
-        <section class="buscador">
+    <div class="container">
+        <div class="buscador">
             <input type="text" id="inputCalle" placeholder="Buscar calle...">
             <button onclick="buscarCalle()">Buscar</button>
-            <div id="resultado"></div>
-        </section>
+        </div>
+        <div id="resultado"></div>
+        <div id="map"></div>
+    </div>
 
-        <section class="mapa">
-            <div id="map"></div>
-        </section>
-    </main>
-
-    <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <script src="/src/buscadorCalles.js"></script>
 </body>

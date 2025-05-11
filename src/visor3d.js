@@ -77,6 +77,34 @@ const building2 = createBuilding(15, 15, 0xff7700, 10);  // Edificio Naranja
 
 // Elementos interactivos
 const interactives = [building1, building2, ...parks];
+// Datos del terreno
+const objectData = {
+  "building1": { type: "Edificio", pollution: 40 },
+  "building2": { type: "Centro Residencial", pollution: 40 },
+  "park1": { type: "Parque", pollution: 10 },
+  "park2": { type: "Parque", pollution: 10 },
+  "park3": { type: "Parque", pollution: 10 },
+  "park4": { type: "Parque", pollution: 10 }
+};
+
+// Referencias al panel
+const panel = document.getElementById('panel');
+const panelTitle = document.getElementById('panel-title');
+const panelType = document.getElementById('panel-type');
+const panelPollution = document.getElementById('panel-pollution');
+const modifyBtn = document.getElementById('modify-btn');
+const modificationOptions = document.getElementById('modification-options');
+
+let currentObjectKey = null;
+
+// Función para obtener clave
+function getObjectKey(obj) {
+  if (obj === building1) return "building1";
+  if (obj === building2) return "building2";
+  if (parks.includes(obj)) return "park" + (parks.indexOf(obj) + 1);
+  return null;
+}
+
 
 // Cámara inicial
 camera.position.set(60, 60, 60);
@@ -87,24 +115,56 @@ const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 
 window.addEventListener('click', (event) => {
+
+    // Ignorar clics dentro del panel
+  if (event.target.closest('#panel')) return;
+  
   mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
   raycaster.setFromCamera(mouse, camera);
   const intersects = raycaster.intersectObjects(interactives);
 
-  const infoDiv = document.getElementById('info');
-
   if (intersects.length > 0) {
     const clicked = intersects[0].object;
-    if (clicked === building1) {
-      infoDiv.innerText = '🏢 Edificio Azul\n- Oficinas\n- 8 Plantas';
-    } else if (clicked === building2) {
-      infoDiv.innerText = '🏢 Edificio Naranja\n- Centro Residencial\n- 10 Plantas';
-    } else if (parks.includes(clicked)) {
-      infoDiv.innerText = '🌳 Parque\n- Espacio Verde Público';
-    }
+    currentObjectKey = getObjectKey(clicked);
+    if (!currentObjectKey) return;
+
+    const data = objectData[currentObjectKey];
+    panel.style.display = 'block';
+    panelTitle.textContent = 'Información del Terreno';
+    panelType.textContent = `Tipo: ${data.type}`;
+    panelPollution.textContent = `Contaminación: ${data.pollution}%`;
+    modificationOptions.style.display = 'none';
+  } else {
+    panel.style.display = 'none';
   }
 });
+
+// Mostrar opciones de modificación
+modifyBtn.addEventListener('click', () => {
+  modificationOptions.style.display = 'block';
+});
+
+// Aplicar modificación
+modificationOptions.addEventListener('click', (e) => {
+  if (!e.target.dataset.type || !currentObjectKey) return;
+
+  const newType = e.target.dataset.type;
+  const pollutionLevels = {
+    "Parque": 10,
+    "Edificio": 40,
+    "Fábrica": 90,
+    "Centro Comercial": 70
+  };
+
+  objectData[currentObjectKey].type = newType;
+  objectData[currentObjectKey].pollution = pollutionLevels[newType];
+
+  panelType.textContent = `Tipo: ${newType}`;
+  panelPollution.textContent = `Contaminación: ${pollutionLevels[newType]}%`;
+  modificationOptions.style.display = 'none';
+});
+
 
 // Animación
 function animate() {

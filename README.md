@@ -16,6 +16,8 @@ Proyecto de simulación urbana con gemelo digital en 3D y buscador interactivo d
 
 npm install
 
+npm install three
+
 Esto instalará:
 - Vite (entorno de desarrollo)
 - Three.js (motor 3D)

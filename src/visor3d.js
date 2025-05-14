@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
-// Escena y cámara
+// Configuración de la escena
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87ceeb);
 
@@ -18,7 +18,7 @@ const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
 directionalLight.position.set(10, 20, 10);
 scene.add(directionalLight);
 
-// Suelo
+// Suelo y calles
 const ground = new THREE.Mesh(new THREE.PlaneGeometry(100, 100), new THREE.MeshStandardMaterial({ color: 0xcccccc }));
 ground.rotation.x = -Math.PI / 2;
 scene.add(ground);
@@ -35,15 +35,8 @@ street2.rotation.x = -Math.PI / 2;
 street2.position.y = streetHeight;
 scene.add(street2);
 
-// Posiciones reservadas para parques
-const parkPositions = [
-  [-20, -20],
-  [20, 20],
-  [0, -20],
-  [-20, 20]
-];
-
-// Crear parques
+// Parques
+const parkPositions = [[-20, -20], [20, 20], [0, -20], [-20, 20]];
 const parks = parkPositions.map(([x, z]) => {
   const park = new THREE.Mesh(new THREE.PlaneGeometry(6, 6), new THREE.MeshStandardMaterial({ color: 0x228B22 }));
   park.rotation.x = -Math.PI / 2;
@@ -60,34 +53,40 @@ function createBuilding(x, z, color = 0x999999, height = Math.random() * 5 + 3) 
   return building;
 }
 
-// Generar edificios evitando calles y parques
 const gridSpacing = 10;
 for (let x = -40; x <= 40; x += gridSpacing) {
   for (let z = -40; z <= 40; z += gridSpacing) {
-    if (Math.abs(x) < 10 || Math.abs(z) < 10) continue; // Dejar las calles libres
-    const isParkHere = parkPositions.some(([px, pz]) => px === x && pz === z);
-    if (isParkHere) continue; // Dejar los parques libres
+    if (Math.abs(x) < 10 || Math.abs(z) < 10) continue;
+    if (parkPositions.some(([px, pz]) => px === x && pz === z)) continue;
     createBuilding(x, z);
   }
 }
 
-// Edificios interactivos destacados
-const building1 = createBuilding(-15, -15, 0x0077ff, 8); // Edificio Azul
-const building2 = createBuilding(15, 15, 0xff7700, 10);  // Edificio Naranja
+// Edificios destacados
+const building1 = createBuilding(-15, -15, 0x0077ff, 8);
+const building2 = createBuilding(15, 15, 0xff7700, 10);
 
-// Elementos interactivos
 const interactives = [building1, building2, ...parks];
-// Datos del terreno
-const objectData = {
-  "building1": { type: "Edificio", pollution: 40 },
-  "building2": { type: "Centro Residencial", pollution: 40 },
-  "park1": { type: "Parque", pollution: 10 },
-  "park2": { type: "Parque", pollution: 10 },
-  "park3": { type: "Parque", pollution: 10 },
-  "park4": { type: "Parque", pollution: 10 }
+
+// Datos ambientales por tipo
+const pollutionProfiles = {
+  "Parque": { aire: 10, ruido: 20, visual: 10 },
+  "Edificio": { aire: 40, ruido: 50, visual: 60 },
+  "Fábrica": { aire: 90, ruido: 80, visual: 90 },
+  "Centro Comercial": { aire: 70, ruido: 65, visual: 80 }
 };
 
-// Referencias al panel
+// Estado de cada objeto
+const objectData = {
+  "building1": { type: "Edificio", ...pollutionProfiles["Edificio"] },
+  "building2": { type: "Centro Residencial", ...pollutionProfiles["Edificio"] },
+  "park1": { type: "Parque", ...pollutionProfiles["Parque"] },
+  "park2": { type: "Parque", ...pollutionProfiles["Parque"] },
+  "park3": { type: "Parque", ...pollutionProfiles["Parque"] },
+  "park4": { type: "Parque", ...pollutionProfiles["Parque"] }
+};
+
+// Panel UI
 const panel = document.getElementById('panel');
 const panelTitle = document.getElementById('panel-title');
 const panelType = document.getElementById('panel-type');
@@ -97,7 +96,7 @@ const modificationOptions = document.getElementById('modification-options');
 
 let currentObjectKey = null;
 
-// Función para obtener clave
+// Obtener clave del objeto
 function getObjectKey(obj) {
   if (obj === building1) return "building1";
   if (obj === building2) return "building2";
@@ -105,20 +104,60 @@ function getObjectKey(obj) {
   return null;
 }
 
+// Calcular el promedio ambiental
+function calculateGlobalImpact() {
+  const keys = Object.keys(objectData);
+  const sums = { aire: 0, ruido: 0, visual: 0 };
+
+  keys.forEach(key => {
+    sums.aire += objectData[key].aire;
+    sums.ruido += objectData[key].ruido;
+    sums.visual += objectData[key].visual;
+  });
+
+  const count = keys.length;
+  return {
+    aire: Math.round(sums.aire / count),
+    ruido: Math.round(sums.ruido / count),
+    visual: Math.round(sums.visual / count)
+  };
+}
+
+// Actualizar el panel del objeto seleccionado
+function updatePanel() {
+  const data = objectData[currentObjectKey];
+  panelTitle.textContent = 'Información del Terreno';
+  panelType.textContent = `Tipo: ${data.type}`;
+  panelPollution.innerHTML = `
+    🌬️ Aire: ${data.aire} µg/m³<br>
+    🔊 Ruido: ${data.ruido} dB<br>
+    👁️ Impacto Visual: ${data.visual} / 100
+  `;
+  modificationOptions.style.display = 'none';
+}
+
+// Actualizar el panel global siempre visible
+function updateGlobalStats() {
+  const globalImpact = calculateGlobalImpact();
+  document.getElementById('global-air').textContent = `🌬️ Aire: ${globalImpact.aire} µg/m³`;
+  document.getElementById('global-noise').textContent = `🔊 Ruido: ${globalImpact.ruido} dB`;
+  document.getElementById('global-visual').textContent = `👁️ Impacto Visual: ${globalImpact.visual} / 100`;
+}
 
 // Cámara inicial
 camera.position.set(60, 60, 60);
 controls.update();
 
-// Raycaster para clics
+// Inicializar panel global al cargar
+updateGlobalStats();
+
+// Raycaster
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
 
 window.addEventListener('click', (event) => {
-
-    // Ignorar clics dentro del panel
   if (event.target.closest('#panel')) return;
-  
+
   mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
   mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
   raycaster.setFromCamera(mouse, camera);
@@ -129,12 +168,8 @@ window.addEventListener('click', (event) => {
     currentObjectKey = getObjectKey(clicked);
     if (!currentObjectKey) return;
 
-    const data = objectData[currentObjectKey];
     panel.style.display = 'block';
-    panelTitle.textContent = 'Información del Terreno';
-    panelType.textContent = `Tipo: ${data.type}`;
-    panelPollution.textContent = `Contaminación: ${data.pollution}%`;
-    modificationOptions.style.display = 'none';
+    updatePanel();
   } else {
     panel.style.display = 'none';
   }
@@ -150,21 +185,12 @@ modificationOptions.addEventListener('click', (e) => {
   if (!e.target.dataset.type || !currentObjectKey) return;
 
   const newType = e.target.dataset.type;
-  const pollutionLevels = {
-    "Parque": 10,
-    "Edificio": 40,
-    "Fábrica": 90,
-    "Centro Comercial": 70
-  };
+  objectData[currentObjectKey] = { type: newType, ...pollutionProfiles[newType] };
 
-  objectData[currentObjectKey].type = newType;
-  objectData[currentObjectKey].pollution = pollutionLevels[newType];
-
-  panelType.textContent = `Tipo: ${newType}`;
-  panelPollution.textContent = `Contaminación: ${pollutionLevels[newType]}%`;
+  updatePanel();
+  updateGlobalStats(); // Actualizar el global al modificar
   modificationOptions.style.display = 'none';
 });
-
 
 // Animación
 function animate() {

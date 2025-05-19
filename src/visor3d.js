@@ -169,33 +169,42 @@ function updatePanel() {
 
 function showImpactPreview() {
   const preview = document.getElementById('impact-preview');
-  preview.innerHTML = ''; // Limpiar anterior
+  preview.innerHTML = '';
 
   if (!currentObjectKey) return;
 
   const current = objectData[currentObjectKey];
+  preview.style.display = 'none';  // Ocultar por defecto
 
   ["Parque", "Edificio", "Fábrica", "Centro Comercial"].forEach(type => {
+    if (type === current.type) return;  // Omitir el mismo tipo
+
     const profile = pollutionProfiles[type];
     const lines = [];
+    let hasImpact = false;
 
     ["aire", "ruido", "visual"].forEach(metric => {
       const diff = profile[metric] - current[metric];
       const percent = current[metric] === 0 ? 0 : Math.round((diff / current[metric]) * 100);
-      const color = percent > 0 ? 'green' : percent < 0 ? 'red' : 'black';
-      const sign = percent > 0 ? '🔺' : percent < 0 ? '🔻' : '';
-      lines.push(`<span style="color:${color}">${sign} ${metric.charAt(0).toUpperCase() + metric.slice(1)} ${percent}%</span>`);
+      if (percent !== 0) {
+        const color = percent > 0 ? 'green' : 'red';
+        const sign = percent > 0 ? '🔺' : '🔻';
+        lines.push(`<span style="color:${color}">${sign} ${metric.charAt(0).toUpperCase() + metric.slice(1)} ${percent}%</span>`);
+        hasImpact = true;
+      }
     });
 
-    preview.innerHTML += `
-      <div style="margin-top:5px;">
-        <strong>${type}:</strong><br>
-        ${lines.join('<br>')}
-      </div>
-    `;
+    if (hasImpact) {
+      preview.style.display = 'block';
+      preview.innerHTML += `
+        <div style="margin-top:5px;">
+          <strong>${type}:</strong><br>
+          ${lines.join('<br>')}
+        </div>
+      `;
+    }
   });
 }
-
 
 function updateGlobalStats() {
   const globalImpact = calculateGlobalImpact();

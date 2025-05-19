@@ -1,13 +1,17 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
-// Configuración de la escena
+// Escena y cámara
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87ceeb);
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+camera.position.set(60, 60, 60);
+
+// Renderizador y controles
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
 document.body.appendChild(renderer.domElement);
 
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -16,43 +20,73 @@ const controls = new OrbitControls(camera, renderer.domElement);
 scene.add(new THREE.AmbientLight(0xffffff, 0.6));
 const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
 directionalLight.position.set(10, 20, 10);
+directionalLight.castShadow = true;
 scene.add(directionalLight);
 
-// Suelo y calles
+// Materiales
+const streetMaterial = new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.8 });
+const parkBaseMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22, roughness: 1 });
+
+// Suelo
 const ground = new THREE.Mesh(new THREE.PlaneGeometry(100, 100), new THREE.MeshStandardMaterial({ color: 0xcccccc }));
 ground.rotation.x = -Math.PI / 2;
+ground.receiveShadow = true;
 scene.add(ground);
 
-// Calles elevadas para evitar solapamiento visual
+// Calles
 const streetHeight = 0.02;
-const street1 = new THREE.Mesh(new THREE.PlaneGeometry(100, 8), new THREE.MeshStandardMaterial({ color: 0x333333 }));
+const street1 = new THREE.Mesh(new THREE.PlaneGeometry(100, 8), streetMaterial);
 street1.rotation.x = -Math.PI / 2;
 street1.position.y = streetHeight;
+street1.receiveShadow = true;
 scene.add(street1);
 
-const street2 = new THREE.Mesh(new THREE.PlaneGeometry(8, 100), new THREE.MeshStandardMaterial({ color: 0x333333 }));
+const street2 = new THREE.Mesh(new THREE.PlaneGeometry(8, 100), streetMaterial);
 street2.rotation.x = -Math.PI / 2;
 street2.position.y = streetHeight;
+street2.receiveShadow = true;
 scene.add(street2);
 
-// Parques
-const parkPositions = [[-20, -20], [20, 20], [0, -20], [-20, 20]];
+// Parques elevados
+const parkPositions = [[-20, -20], [20, 20], [-20, 20]];
 const parks = parkPositions.map(([x, z]) => {
-  const park = new THREE.Mesh(new THREE.PlaneGeometry(6, 6), new THREE.MeshStandardMaterial({ color: 0x228B22 }));
-  park.rotation.x = -Math.PI / 2;
-  park.position.set(x, 0.01, z);
-  scene.add(park);
-  return park;
+  const base = new THREE.Mesh(new THREE.BoxGeometry(4, 0.5, 4), parkBaseMaterial);
+  base.position.set(x, 0.25, z);
+  base.receiveShadow = true;
+  base.castShadow = true;
+  scene.add(base);
+  return base;
 });
 
-// Función para crear edificios
-function createBuilding(x, z, color = 0x999999, height = Math.random() * 5 + 3) {
-  const building = new THREE.Mesh(new THREE.BoxGeometry(4, height, 4), new THREE.MeshStandardMaterial({ color }));
+// Geometrías según tipo con altura fija 8
+function getGeometryByType(type) {
+  switch (type) {
+    case "Parque":
+      return new THREE.BoxGeometry(4, 0.5, 4);
+    case "Edificio":
+      return new THREE.BoxGeometry(4, 8, 4);
+    case "Fábrica":
+      return new THREE.CylinderGeometry(2, 2, 8, 8);
+    case "Centro Comercial":
+      return new THREE.BoxGeometry(4, 8, 4);
+    default:
+      return new THREE.BoxGeometry(4, 8, 4);
+  }
+}
+
+// Crear edificios
+function createBuilding(x, z, color = 0x999999, type = "Edificio") {
+  const geometry = getGeometryByType(type);
+  const building = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ color, roughness: 0.5, metalness: 0.3 }));
+  const height = geometry.parameters.height || 8;
   building.position.set(x, height / 2, z);
+  building.castShadow = true;
+  building.receiveShadow = true;
   scene.add(building);
   return building;
 }
 
+// Crear edificios en la cuadrícula
 const gridSpacing = 10;
 for (let x = -40; x <= 40; x += gridSpacing) {
   for (let z = -40; z <= 40; z += gridSpacing) {
@@ -63,12 +97,12 @@ for (let x = -40; x <= 40; x += gridSpacing) {
 }
 
 // Edificios destacados
-const building1 = createBuilding(-15, -15, 0x0077ff, 8);
-const building2 = createBuilding(15, 15, 0xff7700, 10);
+const building1 = createBuilding(-15, -15, 0x0077ff, "Edificio");
+const building2 = createBuilding(15, 15, 0xff7700, "Centro Comercial");
 
 const interactives = [building1, building2, ...parks];
 
-// Datos ambientales por tipo
+// Datos ambientales
 const pollutionProfiles = {
   "Parque": { aire: 10, ruido: 20, visual: 10 },
   "Edificio": { aire: 40, ruido: 50, visual: 60 },
@@ -76,27 +110,26 @@ const pollutionProfiles = {
   "Centro Comercial": { aire: 70, ruido: 65, visual: 80 }
 };
 
-// Estado de cada objeto
 const objectData = {
   "building1": { type: "Edificio", ...pollutionProfiles["Edificio"] },
-  "building2": { type: "Centro Residencial", ...pollutionProfiles["Edificio"] },
+  "building2": { type: "Centro Comercial", ...pollutionProfiles["Centro Comercial"] },
   "park1": { type: "Parque", ...pollutionProfiles["Parque"] },
   "park2": { type: "Parque", ...pollutionProfiles["Parque"] },
   "park3": { type: "Parque", ...pollutionProfiles["Parque"] },
   "park4": { type: "Parque", ...pollutionProfiles["Parque"] }
 };
 
-// Panel UI
+// Paneles UI
 const panel = document.getElementById('panel');
 const panelTitle = document.getElementById('panel-title');
 const panelType = document.getElementById('panel-type');
 const panelPollution = document.getElementById('panel-pollution');
 const modifyBtn = document.getElementById('modify-btn');
 const modificationOptions = document.getElementById('modification-options');
+const logList = document.getElementById('log-list');
 
 let currentObjectKey = null;
 
-// Obtener clave del objeto
 function getObjectKey(obj) {
   if (obj === building1) return "building1";
   if (obj === building2) return "building2";
@@ -104,39 +137,66 @@ function getObjectKey(obj) {
   return null;
 }
 
-// Calcular el promedio ambiental
 function calculateGlobalImpact() {
-  const keys = Object.keys(objectData);
-  const sums = { aire: 0, ruido: 0, visual: 0 };
+  const weights = { "Parque": 1, "Edificio": 2, "Fábrica": 3, "Centro Comercial": 2 };
+  let sums = { aire: 0, ruido: 0, visual: 0 };
+  let totalWeight = 0;
 
-  keys.forEach(key => {
-    sums.aire += objectData[key].aire;
-    sums.ruido += objectData[key].ruido;
-    sums.visual += objectData[key].visual;
+  Object.keys(objectData).forEach(key => {
+    const obj = objectData[key];
+    const weight = weights[obj.type] || 1;
+
+    sums.aire += obj.aire * weight;
+    sums.ruido += obj.ruido * weight;
+    sums.visual += obj.visual * weight;
+    totalWeight += weight;
   });
 
-  const count = keys.length;
   return {
-    aire: Math.round(sums.aire / count),
-    ruido: Math.round(sums.ruido / count),
-    visual: Math.round(sums.visual / count)
+    aire: Math.round(sums.aire / totalWeight),
+    ruido: Math.round(sums.ruido / totalWeight),
+    visual: Math.round(sums.visual / totalWeight)
   };
 }
 
-// Actualizar el panel del objeto seleccionado
 function updatePanel() {
   const data = objectData[currentObjectKey];
   panelTitle.textContent = 'Información del Terreno';
   panelType.textContent = `Tipo: ${data.type}`;
-  panelPollution.innerHTML = `
-    🌬️ Aire: ${data.aire} µg/m³<br>
-    🔊 Ruido: ${data.ruido} dB<br>
-    👁️ Impacto Visual: ${data.visual} / 100
-  `;
+  panelPollution.innerHTML = `🌬️ Aire: ${data.aire} µg/m³<br>🔊 Ruido: ${data.ruido} dB<br>👁️ Impacto Visual: ${data.visual} / 100`;
   modificationOptions.style.display = 'none';
 }
 
-// Actualizar el panel global siempre visible
+function showImpactPreview() {
+  const preview = document.getElementById('impact-preview');
+  preview.innerHTML = ''; // Limpiar anterior
+
+  if (!currentObjectKey) return;
+
+  const current = objectData[currentObjectKey];
+
+  ["Parque", "Edificio", "Fábrica", "Centro Comercial"].forEach(type => {
+    const profile = pollutionProfiles[type];
+    const lines = [];
+
+    ["aire", "ruido", "visual"].forEach(metric => {
+      const diff = profile[metric] - current[metric];
+      const percent = current[metric] === 0 ? 0 : Math.round((diff / current[metric]) * 100);
+      const color = percent > 0 ? 'green' : percent < 0 ? 'red' : 'black';
+      const sign = percent > 0 ? '🔺' : percent < 0 ? '🔻' : '';
+      lines.push(`<span style="color:${color}">${sign} ${metric.charAt(0).toUpperCase() + metric.slice(1)} ${percent}%</span>`);
+    });
+
+    preview.innerHTML += `
+      <div style="margin-top:5px;">
+        <strong>${type}:</strong><br>
+        ${lines.join('<br>')}
+      </div>
+    `;
+  });
+}
+
+
 function updateGlobalStats() {
   const globalImpact = calculateGlobalImpact();
   document.getElementById('global-air').textContent = `🌬️ Aire: ${globalImpact.aire} µg/m³`;
@@ -144,11 +204,47 @@ function updateGlobalStats() {
   document.getElementById('global-visual').textContent = `👁️ Impacto Visual: ${globalImpact.visual} / 100`;
 }
 
-// Cámara inicial
-camera.position.set(60, 60, 60);
-controls.update();
+function logChange(description) {
+  const li = document.createElement('li');
+  li.textContent = description;
+  logList.appendChild(li);
+}
 
-// Inicializar panel global al cargar
+// Animación de modificación
+function animateModification(object, newColor) {
+  const material = object.material;
+  const startColor = new THREE.Color(material.color.getHex());
+  const endColor = new THREE.Color(newColor);
+
+  let progress = 0;
+  const duration = 30;
+
+  function animate() {
+    if (progress <= duration) {
+      const t = progress / duration;
+      material.color.lerpColors(startColor, endColor, t);
+      const scaleFactor = 1 + 0.2 * Math.sin(Math.PI * t);
+      object.scale.set(scaleFactor, scaleFactor, scaleFactor);
+      progress++;
+      requestAnimationFrame(animate);
+    } else {
+      object.scale.set(1, 1, 1);
+    }
+  }
+
+  animate();
+}
+
+// Actualiza la forma del objeto
+function updateObjectGeometry(object, type) {
+  const newGeometry = getGeometryByType(type);
+  object.geometry.dispose();
+  object.geometry = newGeometry;
+  const height = newGeometry.parameters.height || 8;
+  object.position.y = height / 2;
+}
+
+// Inicializar estado global
 updateGlobalStats();
 
 // Raycaster
@@ -167,7 +263,6 @@ window.addEventListener('click', (event) => {
     const clicked = intersects[0].object;
     currentObjectKey = getObjectKey(clicked);
     if (!currentObjectKey) return;
-
     panel.style.display = 'block';
     updatePanel();
   } else {
@@ -178,21 +273,37 @@ window.addEventListener('click', (event) => {
 // Mostrar opciones de modificación
 modifyBtn.addEventListener('click', () => {
   modificationOptions.style.display = 'block';
+  showImpactPreview();
 });
 
-// Aplicar modificación
+// Aplicar modificación con animación, cambio de forma y log
 modificationOptions.addEventListener('click', (e) => {
   if (!e.target.dataset.type || !currentObjectKey) return;
 
   const newType = e.target.dataset.type;
-  objectData[currentObjectKey] = { type: newType, ...pollutionProfiles[newType] };
+  const newProfile = { type: newType, ...pollutionProfiles[newType] };
+  objectData[currentObjectKey] = newProfile;
 
+  const clickedObject = interactives.find(obj => getObjectKey(obj) === currentObjectKey);
+
+  let newColor;
+  switch (newType) {
+    case "Parque": newColor = 0x228B22; break;
+    case "Edificio": newColor = 0x999999; break;
+    case "Fábrica": newColor = 0x444444; break;
+    case "Centro Comercial": newColor = 0xff7700; break;
+    default: newColor = 0x999999;
+  }
+
+  animateModification(clickedObject, newColor);
+  updateObjectGeometry(clickedObject, newType);
   updatePanel();
-  updateGlobalStats(); // Actualizar el global al modificar
+  updateGlobalStats();
   modificationOptions.style.display = 'none';
+  logChange(`✅ ${currentObjectKey} cambiado a ${e.target.textContent.trim()}`);
 });
 
-// Animación
+// Animación principal
 function animate() {
   requestAnimationFrame(animate);
   renderer.render(scene, camera);

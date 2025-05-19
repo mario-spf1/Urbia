@@ -10,12 +10,11 @@
   <a href="index.html" id="back-button">⟵ Volver al Inicio</a>
   
   <div id="global-stats">
-  <h3>🌍 Estado Ambiental Global</h3>
-  <p id="global-air">🌬️ Aire: -- µg/m³</p>
-  <p id="global-noise">🔊 Ruido: -- dB</p>
-  <p id="global-visual">👁️ Impacto Visual: -- / 100</p>
-</div>
-
+    <h3>🌍 Estado Ambiental Global</h3>
+    <p id="global-air">🌬️ Aire: -- µg/m³</p>
+    <p id="global-noise">🔊 Ruido: -- dB</p>
+    <p id="global-visual">👁️ Impacto Visual: -- / 100</p>
+  </div>
 
   <!-- Panel Lateral Oculto -->
   <div id="panel" style="display: none;">
@@ -28,10 +27,25 @@
       <button data-type="Edificio">🏢 Edificio</button>
       <button data-type="Fábrica">🏭 Fábrica</button>
       <button data-type="Centro Comercial">🛒 Centro Comercial</button>
+      <div id="impact-preview" style="margin-top: 10px;"></div>
     </div>
+  </div>
+
+  <!-- Historial de Cambios -->
+  <div id="change-log" style="position: absolute; bottom: 10px; left: 10px; width: 220px; background: rgba(255,255,255,0.85); padding: 10px; border-radius: 5px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); z-index: 1;">
+    <h3 style="margin-top: 0;">📜 Historial</h3>
+    <ul id="log-list" style="padding-left: 20px; margin: 0;"></ul>
+  </div>
+
+  <!-- Leyenda Visual -->
+  <div id="legend" style="position: absolute; bottom: 10px; right: 10px; background: rgba(255,255,255,0.85); padding: 10px; border-radius: 5px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); z-index: 1;">
+    <h3 style="margin-top: 0;">🗺️ Leyenda</h3>
+    <p>🏢 Edificio (Gris)</p>
+    <p>🏭 Fábrica (Oscuro)</p>
+    <p>🛒 Centro Comercial (Naranja)</p>
+    <p>🌳 Parque (Verde)</p>
   </div>
 
   <script type="module" src="/src/visor3d.js"></script>
 </body>
-
 </html>
